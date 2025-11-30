@@ -16,6 +16,37 @@ def get_api_key():
     # 로컬 개발용 (배포 시 Secrets 사용 권장)
     return "654d446e737a6f7239355155714278"
 
+def get_subway_line_name(subway_id):
+    """지하철 호선 ID를 호선 이름으로 변환"""
+    subway_line_map = {
+        '1001': '1호선',
+        '1002': '2호선',
+        '1003': '3호선',
+        '1004': '4호선',
+        '1005': '5호선',
+        '1006': '6호선',
+        '1007': '7호선',
+        '1008': '8호선',
+        '1009': '9호선',
+        '1061': '중앙선',
+        '1063': '경의중앙선',
+        '1065': '공항철도',
+        '1067': '경춘선',
+        '1071': '수인분당선',
+        '1075': '분당선',
+        '1077': '분당선',
+        '1081': '신림선',
+        '1092': '신분당선',
+        '1093': '용인경전철',
+        '1094': '의정부경전철',
+        '1095': '우이신설선',
+        '1096': '서해선',
+        '1097': '김포골드라인',
+        '1099': '수인선',
+    }
+    subway_id_str = str(subway_id) if subway_id else ''
+    return subway_line_map.get(subway_id_str, f'{subway_id_str}호선' if subway_id_str else '알 수 없음')
+
 # 페이지 설정
 st.set_page_config(
     page_title="지하철 실시간 도착 정보",
@@ -205,12 +236,17 @@ def parse_train_info(train_data):
     lstcar_at = train_data.get('lstcarAt', '0')
     is_last_train = (lstcar_at == '1' or lstcar_at == 1)
     
+    # 호선 정보
+    subway_id = train_data.get('subwayId', '')
+    subway_line_name = get_subway_line_name(subway_id)
+    
     info = {
         'direction': train_data.get('bstatnNm', '알 수 없음'),  # 도착지 방면
         'status': status,  # 상태 (진입중, 도착 등)
         'time': time_display,  # 남은 시간
         'current': current_location if current_location else '알 수 없음',  # 현재 위치
-        'subway_line': train_data.get('subwayId', ''),  # 호선 정보
+        'subway_line': subway_id,  # 호선 ID
+        'subway_line_name': subway_line_name,  # 호선 이름
         'updn_line': train_data.get('updnLine', ''),  # 상행/하행
         'is_last_train': is_last_train  # 막차 여부
     }
@@ -239,9 +275,14 @@ def display_train_card(train_info, index):
                 background-color: {bg_color};
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             ">
-                <h4 style="margin: 0; color: #1976d2;">
-                    🚇 {train_info['direction']} 방면{last_train_badge}
-                </h4>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <h4 style="margin: 0; color: #1976d2;">
+                        🚇 {train_info['direction']} 방면{last_train_badge}
+                    </h4>
+                    <span style="background-color: #1976d2; color: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold;">
+                        {train_info.get('subway_line_name', '알 수 없음')}
+                    </span>
+                </div>
                 <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #d32f2f;">
                     {train_info['status']}
                 </p>
